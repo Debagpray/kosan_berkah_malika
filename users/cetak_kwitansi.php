@@ -7,11 +7,11 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$id = (int)$_GET['id'];
+$id = (int) $_GET['id'];
 $user_id = $_SESSION['user_id'];
 
 // Get Booking Data
-$sql = "SELECT r.*, k.nama_kamar, k.lokasi as lokasi_kamar, u.nama_lengkap as nama_user, u.email as email_user
+$sql = "SELECT r.*, k.nama_kamar, k.lokasi as lokasi_kamar, u.nama_lengkap as nama_user
         FROM reservasi r 
         JOIN kamar k ON r.id_kamar = k.id_kamar 
         JOIN pengguna u ON r.id_pengguna = u.id_pengguna
@@ -207,7 +207,7 @@ if (!$booking || $booking['status_reservasi'] !== 'Dikonfirmasi') {
             <div class="signature">
                 <p>Admin Berkah Malika,</p>
                 <div style="height: 60px;"></div>
-                <p>( ............. )</p>
+                <p>( Fauzi )</p>
             </div>
         </div>
 

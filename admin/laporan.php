@@ -9,7 +9,8 @@ require_once '../config/database.php';
 // Date range filter
 $bulan = $_GET['bulan'] ?? date('m');
 $tahun = $_GET['tahun'] ?? date('Y');
-$bulan_int = (int)$bulan;
+$tampil_semua = ($bulan === '0' || $bulan === 'semua');
+$bulan_int = $tampil_semua ? 0 : (int)$bulan;
 $tahun_int = (int)$tahun;
 
 // Pendapatan per bulan from laporan_keuangan
@@ -20,9 +21,14 @@ $lap_stmt->execute();
 $laporan = $lap_stmt->get_result()->fetch_assoc();
 
 // Stats from reservasi
-$bulan_fmt = sprintf('%04d-%02d', $tahun_int, $bulan_int);
-$total_reservasi_bln = $conn->query("SELECT COUNT(*) as c FROM reservasi WHERE DATE_FORMAT(dibuat_pada, '%Y-%m') = '$bulan_fmt' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['c'];
-$total_pendapatan_bln = $conn->query("SELECT SUM(total_harga) as t FROM reservasi WHERE DATE_FORMAT(dibuat_pada, '%Y-%m') = '$bulan_fmt' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['t'] ?? 0;
+if ($tampil_semua) {
+    $total_reservasi_bln = $conn->query("SELECT COUNT(*) as c FROM reservasi WHERE YEAR(dibuat_pada) = '$tahun_int' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['c'];
+    $total_pendapatan_bln = $conn->query("SELECT SUM(total_harga) as t FROM reservasi WHERE YEAR(dibuat_pada) = '$tahun_int' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['t'] ?? 0;
+} else {
+    $bulan_fmt = sprintf('%04d-%02d', $tahun_int, $bulan_int);
+    $total_reservasi_bln = $conn->query("SELECT COUNT(*) as c FROM reservasi WHERE DATE_FORMAT(dibuat_pada, '%Y-%m') = '$bulan_fmt' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['c'];
+    $total_pendapatan_bln = $conn->query("SELECT SUM(total_harga) as t FROM reservasi WHERE DATE_FORMAT(dibuat_pada, '%Y-%m') = '$bulan_fmt' AND status_reservasi = 'Dikonfirmasi'")->fetch_assoc()['t'] ?? 0;
+}
 
 // Monthly chart data (last 12 months)
 $chart_labels = [];
@@ -41,6 +47,27 @@ $metode_data = $conn->query("SELECT metode_pembayaran, COUNT(*) as cnt, SUM(tota
 
 // Top kamar
 $top_kamar = $conn->query("SELECT k.nama_kamar, COUNT(r.id_reservasi) as cnt, SUM(r.total_harga) as pendapatan FROM reservasi r JOIN kamar k ON r.id_kamar = k.id_kamar WHERE r.status_reservasi = 'Dikonfirmasi' GROUP BY k.id_kamar ORDER BY cnt DESC LIMIT 5");
+
+// Transaction history for the selected month
+if ($tampil_semua) {
+    $query_history = $conn->prepare("SELECT pb.*, r.nama_pemesan, r.durasi_sewa, k.nama_kamar 
+                                     FROM pembayaran pb 
+                                     JOIN reservasi r ON pb.id_reservasi = r.id_reservasi 
+                                     JOIN kamar k ON r.id_kamar = k.id_kamar 
+                                     WHERE YEAR(pb.dibuat_pada) = ? 
+                                     ORDER BY pb.dibuat_pada DESC");
+    $query_history->bind_param("i", $tahun_int);
+} else {
+    $query_history = $conn->prepare("SELECT pb.*, r.nama_pemesan, r.durasi_sewa, k.nama_kamar 
+                                     FROM pembayaran pb 
+                                     JOIN reservasi r ON pb.id_reservasi = r.id_reservasi 
+                                     JOIN kamar k ON r.id_kamar = k.id_kamar 
+                                     WHERE MONTH(pb.dibuat_pada) = ? AND YEAR(pb.dibuat_pada) = ? 
+                                     ORDER BY pb.dibuat_pada DESC");
+    $query_history->bind_param("ii", $bulan_int, $tahun_int);
+}
+$query_history->execute();
+$riwayat_transaksi = $query_history->get_result();
 
 $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 ?>
@@ -69,14 +96,18 @@ $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustu
         .table-card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; }
         .table th { background: #f8f9fa; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; border: 0; padding: 1rem; }
         .table td { padding: 0.85rem 1rem; vertical-align: middle; border-color: #f0f0f0; font-size: 0.88rem; }
-        .filter-card { background: white; border-radius: 16px; padding: 1rem 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .badge-lunas    { background: #d1fae5; color: #059669; border-radius: 50px; padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 600; }
+        .badge-menunggu { background: #fef3c7; color: #d97706; border-radius: 50px; padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 600; }
+        .badge-gagal    { background: #fee2e2; color: #dc2626; border-radius: 50px; padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 600; }
+        .btn-hapus { background: transparent; color: #dc2626; border: 1.5px solid #dc2626; border-radius: 50px; padding: 0.3rem 0.85rem; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-hapus:hover { background: #dc2626; color: #fff; }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-brand">
-            <div class="text-white fw-bold"><i class="fas fa-home me-2"></i>Berkah Malika</div>
+            <div class="text-white fw-bold"><i class="fas fa-home me-2 text-indigo-400"></i>Berkah Malika</div>
             <small class="text-white-50 small">Panel Admin</small>
         </div>
         <nav class="mt-2">
@@ -98,14 +129,21 @@ $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustu
             <h4 class="fw-bold mb-1"><i class="fas fa-chart-bar me-2"></i>Laporan Keuangan</h4>
             <p class="opacity-75 mb-0 small">Analisis pendapatan dan statistik reservasi</p>
         </div>
+        <?php if (isset($_GET['deleted'])): ?>
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>Data transaksi berhasil dihapus.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
 
         <!-- Filter -->
         <div class="filter-card d-flex align-items-center gap-3">
             <i class="fas fa-filter text-muted"></i>
             <form method="GET" class="d-flex gap-2 align-items-center mb-0">
                 <select name="bulan" class="form-select form-select-sm rounded-pill" style="width:auto">
+                    <option value="0" <?php if ($tampil_semua) echo 'selected'; ?>>Semua</option>
                     <?php for ($m = 1; $m <= 12; $m++): ?>
-                    <option value="<?php echo $m; ?>" <?php if ($m == $bulan_int) echo 'selected'; ?>><?php echo $bulan_names[$m-1]; ?></option>
+                    <option value="<?php echo $m; ?>" <?php if (!$tampil_semua && $m == $bulan_int) echo 'selected'; ?>><?php echo $bulan_names[$m-1]; ?></option>
                     <?php endfor; ?>
                 </select>
                 <select name="tahun" class="form-select form-select-sm rounded-pill" style="width:auto">
@@ -121,7 +159,7 @@ $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustu
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="text-muted small mb-1">Pendapatan <?php echo $bulan_names[$bulan_int - 1]; ?></div>
+                    <div class="text-muted small mb-1">Pendapatan <?php echo $tampil_semua ? 'Semua Bulan' : $bulan_names[$bulan_int - 1]; ?></div>
                     <div style="font-size:1.5rem;font-weight:700;color:#0284c7">Rp <?php echo number_format($total_pendapatan_bln, 0, ',', '.'); ?></div>
                 </div>
             </div>
@@ -139,16 +177,10 @@ $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustu
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="text-muted small mb-1">Laporan DB (<?php echo $bulan_names[$bulan_int-1]; ?>)</div>
-                    <?php if ($laporan): ?>
-                    <div>
-                        <div class="small fw-bold text-success">Pendapatan: Rp <?php echo number_format($laporan['total_pendapatan'], 0, ',', '.'); ?></div>
-                        <div class="small text-muted"><?php echo $laporan['total_reservasi']; ?> reservasi &bull; <?php echo $laporan['total_kamar_terisi']; ?> kamar terisi</div>
-                        <?php if ($laporan['keterangan']): ?><div class="small text-muted mt-1"><?php echo htmlspecialchars($laporan['keterangan']); ?></div><?php endif; ?>
+                    <div class="text-muted small mb-2">Export Laporan (<?php echo $tampil_semua ? 'Semua Bulan' : $bulan_names[$bulan_int-1]; ?>)</div>
+                    <div class="d-flex gap-2">
+                        <a href="export_laporan.php?format=pdf&bulan=<?php echo $bulan_int; ?>&tahun=<?php echo $tahun_int; ?>" target="_blank" class="btn btn-outline-danger flex-fill rounded-pill" style="font-size:0.85rem"><i class="fas fa-file-pdf me-1"></i> PDF</a>
                     </div>
-                    <?php else: ?>
-                    <div class="text-muted small">Belum ada data laporan</div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -206,6 +238,61 @@ $bulan_names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustu
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- Riwayat Transaksi -->
+        <h6 class="fw-bold mb-3 mt-5"><i class="fas fa-history me-2"></i>Riwayat Transaksi</h6>
+        <div class="table-card mb-5">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Pemesan</th>
+                            <th>Kamar</th>
+                            <th>Durasi</th>
+                            <th>Jumlah</th>
+                            <th class="text-center">Metode</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Tanggal</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($riwayat_transaksi && $riwayat_transaksi->num_rows > 0): 
+                            while($row = $riwayat_transaksi->fetch_assoc()): 
+                                $sts = $row['status_transaksi'];
+                                $sts_label = $sts;
+                                if ($sts === 'settlement' || $sts === 'capture' || $sts === 'lunas') {
+                                    $bdg = 'badge-lunas';
+                                    $sts_label = 'Lunas';
+                                } elseif ($sts === 'pending' || $sts === 'menunggu') {
+                                    $bdg = 'badge-menunggu';
+                                    $sts_label = 'Menunggu';
+                                } else {
+                                    $bdg = 'badge-gagal';
+                                    $sts_label = ucfirst($sts);
+                                }
+                        ?>
+                        <tr>
+                            <td class="fw-medium"><?php echo htmlspecialchars($row['nama_pemesan']); ?></td>
+                            <td><?php echo htmlspecialchars($row['nama_kamar']); ?></td>
+                            <td><?php echo !empty($row['durasi_sewa']) ? $row['durasi_sewa'] : (($row['jumlah_bayar'] % 7000000 == 0) ? ($row['jumlah_bayar']/7000000).' Tahun' : ($row['jumlah_bayar']/700000).' Bulan'); ?></td>
+                            <td class="fw-bold text-success">Rp <?php echo number_format($row['jumlah_bayar'], 0, ',', '.'); ?></td>
+                            <td class="text-center"><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($row['jenis_pembayaran'] ?: '-'); ?></span></td>
+                            <td class="text-center"><span class="<?php echo $bdg; ?>"><?php echo htmlspecialchars($sts_label); ?></span></td>
+                            <td class="text-center text-muted small"><?php echo date('d/m/Y', strtotime($row['dibuat_pada'])); ?></td>
+                            <td class="text-end">
+                                <a href="edit_booking.php?id=<?php echo $row['id_reservasi']; ?>" class="btn btn-light btn-sm rounded-pill px-3">
+                                    <i class="fas fa-eye me-1"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endwhile; else: ?>
+                        <tr><td colspan="8" class="text-center py-5 text-muted">Tidak ada transaksi di bulan ini.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

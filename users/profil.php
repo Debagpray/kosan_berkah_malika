@@ -25,40 +25,30 @@ if (!$user) {
 // Handle Profile Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profil'])) {
     $nama_lengkap = trim($_POST['nama_lengkap']);
-    $email        = trim($_POST['email']);
     $no_hp        = trim($_POST['no_hp']);
     
-    // Check email uniqueness (excluding current user)
-    $cek = $conn->prepare("SELECT id_pengguna FROM pengguna WHERE email = ? AND id_pengguna != ?");
-    $cek->bind_param("si", $email, $user_id);
-    $cek->execute();
-    if ($cek->get_result()->num_rows > 0) {
-        $message = "Email sudah digunakan akun lain.";
-    } else {
-        // Handle foto_profil upload
-        $foto = $user['foto_profil'];
-        if (!empty($_FILES['foto_profil']['name'])) {
-            $target_dir = "../public/uploads/profil/";
-            if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
-            $ext          = strtolower(pathinfo($_FILES['foto_profil']['name'], PATHINFO_EXTENSION));
-            $allowed_ext  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            if (in_array($ext, $allowed_ext)) {
-                $new_file = "profil_" . $user_id . "_" . time() . ".$ext";
-                if (move_uploaded_file($_FILES['foto_profil']['tmp_name'], $target_dir . $new_file)) {
-                    $foto = "uploads/profil/" . $new_file;
-                }
+    // Handle foto_profil upload
+    $foto = $user['foto_profil'];
+    if (!empty($_FILES['foto_profil']['name'])) {
+        $target_dir = "../public/uploads/profil/";
+        if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+        $ext          = strtolower(pathinfo($_FILES['foto_profil']['name'], PATHINFO_EXTENSION));
+        $allowed_ext  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (in_array($ext, $allowed_ext)) {
+            $new_file = "profil_" . $user_id . "_" . time() . ".$ext";
+            if (move_uploaded_file($_FILES['foto_profil']['tmp_name'], $target_dir . $new_file)) {
+                $foto = "uploads/profil/" . $new_file;
             }
         }
-        
-        $upd = $conn->prepare("UPDATE pengguna SET nama_lengkap = ?, email = ?, no_hp = ?, foto_profil = ? WHERE id_pengguna = ?");
-        $upd->bind_param("ssssi", $nama_lengkap, $email, $no_hp, $foto, $user_id);
-        if ($upd->execute()) {
-            $success = "Profil berhasil diperbarui!";
-            $user['nama_lengkap'] = $nama_lengkap;
-            $user['email']        = $email;
-            $user['no_hp']        = $no_hp;
-            $user['foto_profil']  = $foto;
-        }
+    }
+    
+    $upd = $conn->prepare("UPDATE pengguna SET nama_lengkap = ?, no_hp = ?, foto_profil = ? WHERE id_pengguna = ?");
+    $upd->bind_param("sssi", $nama_lengkap, $no_hp, $foto, $user_id);
+    if ($upd->execute()) {
+        $success = "Profil berhasil diperbarui!";
+        $user['nama_lengkap'] = $nama_lengkap;
+        $user['no_hp']        = $no_hp;
+        $user['foto_profil']  = $foto;
     }
 }
 
@@ -195,30 +185,7 @@ $unread = $notif_count->get_result()->fetch_assoc()['cnt'];
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="../index.php">
-                <i class="fas fa-home me-2"></i>Kos Berkah Malika
-            </a>
-            <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
-                <a href="../index.php" class="btn btn-outline-dark btn-sm rounded-pill">
-                    <i class="fas fa-home me-1"></i>Beranda
-                </a>
-                <a href="notifikasi.php" class="btn btn-light btn-sm rounded-pill position-relative">
-                    <i class="fas fa-bell"></i>
-                    <?php if ($unread > 0): ?>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem"><?php echo $unread; ?></span>
-                    <?php endif; ?>
-                </a>
-                <a href="pesanan_saya.php" class="btn btn-outline-primary btn-sm rounded-pill">
-                    <i class="fas fa-calendar-alt me-1"></i>Pesanan Saya
-                </a>
-                <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill">
-                    <i class="fas fa-sign-out-alt me-1"></i>Keluar
-                </a>
-            </div>
-        </div>
-    </nav>
+    <?php $is_root = false; include '../navbar.php'; ?>
 
     <!-- Header -->
     <div class="page-header">
@@ -247,7 +214,6 @@ $unread = $notif_count->get_result()->fetch_assoc()['cnt'];
                     <hr class="my-3">
                     
                     <div class="text-start">
-                        <p class="small mb-2 text-muted"><i class="fas fa-envelope me-2 text-primary"></i><?php echo htmlspecialchars($user['email']); ?></p>
                         <p class="small mb-2 text-muted"><i class="fas fa-phone me-2 text-success"></i><?php echo !empty($user['no_hp']) ? htmlspecialchars($user['no_hp']) : 'Belum diisi'; ?></p>
                         <p class="small mb-0 text-muted"><i class="fas fa-calendar me-2 text-warning"></i>Bergabung <?php echo date('d M Y', strtotime($user['dibuat_pada'])); ?></p>
                     </div>
@@ -297,13 +263,6 @@ $unread = $notif_count->get_result()->fetch_assoc()['cnt'];
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                        <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
                                     <label class="form-label">Nomor HP</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-phone"></i></span>
@@ -331,15 +290,24 @@ $unread = $notif_count->get_result()->fetch_assoc()['cnt'];
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Password Lama</label>
-                                    <input type="password" name="old_password" class="form-control" placeholder="Masukkan password saat ini" required>
+                                    <div class="position-relative">
+                                        <input type="password" name="old_password" id="old_pass" class="form-control" placeholder="Masukkan password saat ini" required style="padding-right: 2.5rem; border-left: 2px solid #e9ecef; border-radius: 12px;" autocomplete="current-password">
+                                        <i class="fas fa-eye text-muted position-absolute" id="eye_old" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%);" onclick="togglePassword('old_pass', 'eye_old')"></i>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Password Baru</label>
-                                    <input type="password" name="new_password" class="form-control" placeholder="Minimal 6 karakter" required>
+                                    <div class="position-relative">
+                                        <input type="password" name="new_password" id="new_pass" class="form-control" placeholder="Minimal 6 karakter" required style="padding-right: 2.5rem; border-left: 2px solid #e9ecef; border-radius: 12px;" autocomplete="new-password">
+                                        <i class="fas fa-eye text-muted position-absolute" id="eye_new" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%);" onclick="togglePassword('new_pass', 'eye_new')"></i>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Konfirmasi Password Baru</label>
-                                    <input type="password" name="confirm_new" class="form-control" placeholder="Ulangi password baru" required>
+                                    <div class="position-relative">
+                                        <input type="password" name="confirm_new" id="confirm_pass" class="form-control" placeholder="Ulangi password baru" required style="padding-right: 2.5rem; border-left: 2px solid #e9ecef; border-radius: 12px;" autocomplete="new-password">
+                                        <i class="fas fa-eye text-muted position-absolute" id="eye_confirm" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%);" onclick="togglePassword('confirm_pass', 'eye_confirm')"></i>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mt-4">
@@ -356,6 +324,20 @@ $unread = $notif_count->get_result()->fetch_assoc()['cnt'];
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         function previewPhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();

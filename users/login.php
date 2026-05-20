@@ -127,9 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="mb-4">
                     <label class="form-label">Password</label>
-                    <div class="input-group">
+                    <div class="input-group position-relative">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" name="password" class="form-control" placeholder="Masukkan password" required>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Masukkan password" required style="padding-right: 2.5rem;">
+                        <i class="fas fa-eye text-muted position-absolute" id="eye_login" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="togglePassword('password', 'eye_login')"></i>
                     </div>
                 </div>
 
@@ -149,5 +150,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
     </div>
+
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

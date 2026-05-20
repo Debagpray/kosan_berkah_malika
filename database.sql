@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS pengguna (
     id_pengguna INT(11) NOT NULL AUTO_INCREMENT,
     username VARCHAR(255) NOT NULL UNIQUE,
     nama_lengkap VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
     no_hp VARCHAR(20) DEFAULT NULL,
     kata_sandi VARCHAR(255) NOT NULL,
     peran ENUM('admin','penyewa') NOT NULL DEFAULT 'penyewa',
@@ -63,7 +62,6 @@ CREATE TABLE IF NOT EXISTS reservasi (
     id_kamar INT(11) NOT NULL,
     id_pengguna INT(11) NOT NULL,
     nama_pemesan VARCHAR(255) NOT NULL,
-    email_pemesan VARCHAR(255) DEFAULT NULL,
     no_hp_pemesan VARCHAR(20) DEFAULT NULL,
     tanggal_masuk DATE NOT NULL,
     tanggal_keluar DATE NOT NULL,
@@ -173,14 +171,14 @@ CREATE TABLE IF NOT EXISTS laporan_keuangan (
 -- =============================================
 -- DATA AWAL: pengguna
 -- =============================================
-INSERT INTO pengguna (username, nama_lengkap, email, no_hp, kata_sandi, peran) VALUES
-('admin', 'Administrator', 'admin@berkahmalika.com', '081234567890',
+INSERT INTO pengguna (username, nama_lengkap, no_hp, kata_sandi, peran) VALUES
+('admin', 'Administrator', '081234567890',
  '$2y$12$aZnG4Na2gcqVMD51iSBD.OyR7XlnUBx5JftfikfYnk0QeUvjSnVoy', 'admin'),
-('udin', 'Udin Saputra', 'udin@gmail.com', '082345678901',
+('udin', 'Udin Saputra', '082345678901',
  '$2y$12$Fcp2/zjOM53niHbUBgy4vOzhlnz/B2n9HhjnD1WD/3dh8GlqjvzQO', 'penyewa'),
-('deo123', 'Deo Pratama', 'deo@gmail.com', '083456789012',
- '$2y$12$examplehashfordeo123456789abcdef', 'penyewa'),
-('bagas123', 'Bagas Ramadhan', 'bagas@gmail.com', '084567890123',
+('deo123', 'Deo Pratama', '083456789012',
+ '$2y$12$N9qo8uLOickgx2ZMRZoMyeIjZAgOtT.y6lUX8R2.fS3h8A83QZpXu', 'penyewa'),
+('bagas123', 'Bagas Ramadhan', '084567890123',
  '$2y$12$/vYJKFKD1OMhFLDozTvivuic6Fr3PItEtYOc1tdyZq0NU.vtSPxZG', 'penyewa');
 
 -- =============================================
@@ -282,14 +280,14 @@ harga_per_bulan, harga_per_tahun, lantai, status_kamar) VALUES
 -- =============================================
 -- DATA AWAL: reservasi
 -- =============================================
-INSERT INTO reservasi (id_kamar, id_pengguna, nama_pemesan, email_pemesan,
+INSERT INTO reservasi (id_kamar, id_pengguna, nama_pemesan,
 no_hp_pemesan, tanggal_masuk, tanggal_keluar, durasi_sewa, jumlah_tamu,
 total_harga, status_reservasi, metode_pembayaran) VALUES
-(2,  2, 'Udin Saputra',  'udin@gmail.com',  '082345678901',
+(2,  2, 'Udin Saputra',  '082345678901',
  '2025-09-24', '2025-10-24', '1 Bulan', 1, 700000.00,  'Dikonfirmasi', 'Midtrans'),
-(14, 3, 'Deo Pratama',   'deo@gmail.com',   '083456789012',
+(14, 3, 'Deo Pratama',   '083456789012',
  '2025-09-27', '2026-09-27', '1 Tahun', 1, 7000000.00, 'Dikonfirmasi', 'Midtrans'),
-(7,  2, 'Udin Saputra',  'udin@gmail.com',  '082345678901',
+(7,  2, 'Udin Saputra',  '082345678901',
  '2025-09-27', '2025-10-27', '1 Bulan', 1, 700000.00,  'Dikonfirmasi', 'Midtrans');
 
 -- =============================================

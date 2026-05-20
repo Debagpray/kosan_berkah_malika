@@ -80,30 +80,7 @@ $is_occupied = isRoomOccupied($conn, $room['id_kamar']);
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand text-primary fw-bold" href="../index.php"><i class="fas fa-home me-2"></i>Kos Berkah Malika</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Room Status Link -->
-                    <li class="nav-item me-2">
-                        <a class="btn btn-outline-primary rounded-pill px-3" href="status_kamar.php">
-                            <i class="fas fa-door-open me-2"></i>Status Kamar
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="../index.php" class="btn btn-primary rounded-pill px-3">
-                            <i class="fas fa-arrow-left me-2"></i>Kembali
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $is_root = false; include '../navbar.php'; ?>
 
     <!-- Hero Section -->
     <div class="hero-section">

@@ -220,7 +220,32 @@ $total_unread  = $conn->query("SELECT COUNT(*) as c FROM notifikasi WHERE status
                                     </td>
                                     <td>
                                         <div class="fw-bold small"><?php echo htmlspecialchars($n['judul']); ?></div>
-                                        <small class="text-muted"><?php echo htmlspecialchars(substr($n['pesan'], 0, 60)); ?>...</small>
+                                        <small class="text-muted" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#notifModal<?php echo $n['id_notifikasi']; ?>">
+                                            <?php echo htmlspecialchars(strlen($n['pesan']) > 60 ? substr($n['pesan'], 0, 60) . '...' : $n['pesan']); ?>
+                                            <?php if(strlen($n['pesan']) > 60): ?>
+                                                <span class="text-primary text-decoration-underline" style="font-size: 0.75rem;">(Baca selengkapnya)</span>
+                                            <?php endif; ?>
+                                        </small>
+
+                                        <!-- Modal BACA FULL -->
+                                        <div class="modal fade" id="notifModal<?php echo $n['id_notifikasi']; ?>" tabindex="-1" aria-hidden="true">
+                                          <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                              <div class="modal-header border-bottom-0 pb-0">
+                                                <h5 class="modal-title fw-bold"><i class="fas fa-bell text-warning me-2"></i> <?php echo htmlspecialchars($n['judul']); ?></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                              </div>
+                                              <div class="modal-body p-4 pt-3">
+                                                <div class="bg-light p-3 rounded-3 text-muted" style="white-space: pre-wrap; font-size: 0.95rem;">
+                                                    <?php echo htmlspecialchars($n['pesan']); ?>
+                                                </div>
+                                              </div>
+                                              <div class="modal-footer border-top-0 pt-0">
+                                                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
                                     </td>
                                     <td><span class="badge bg-light text-dark border"><?php echo $n['jenis']; ?></span></td>
                                     <td>

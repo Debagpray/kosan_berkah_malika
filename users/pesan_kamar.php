@@ -61,7 +61,6 @@ $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $full_name      = $_POST['full_name'];
-    $email_pemesan  = $_POST['email_pemesan'];
     $no_hp_pemesan  = $_POST['no_hp_pemesan'];
     $check_in       = $_POST['check_in'];
     $check_out      = $_POST['check_out'];
@@ -71,42 +70,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $total_price    = $_POST['total_price'] ?? 0;
     $payment_method = 'Midtrans';
 
-    // Recalculate Logic
-    $date1 = new DateTime($check_in);
-    $date2 = new DateTime($check_out);
-    $diff  = $date1->diff($date2);
-    $days  = $diff->days;
-    if ($days <= 0) $days = 1;
-
     $price = 0;
     $durasi_label = '';
+    $duration_value = (int)$_POST['duration_value'];
     
     if ($duration_type == 'Monthly') {
-        $months = ($date2->format('Y') - $date1->format('Y')) * 12 + ($date2->format('m') - $date1->format('m'));
-        if ($date2->format('d') > $date1->format('d')) {
-            $months++;
-        }
-        if ($months <= 0) $months = 1;
-        $price  = $months * $room['harga_per_bulan'];
-        $durasi_label = $months . ' Bulan';
+        $price = $duration_value * $room['harga_per_bulan'];
+        $durasi_label = $duration_value . ' Bulan';
     } elseif ($duration_type == 'Yearly') {
-        $years = $date2->format('Y') - $date1->format('Y');
-        // Check if it's already past the anniversary date in the end year
-        $date1MonthDay = $date1->format('md');
-        $date2MonthDay = $date2->format('md');
-        if ($date2MonthDay > $date1MonthDay) {
-            $years++;
-        }
-        if ($years <= 0) $years = 1;
-        $price = $years * $room['harga_per_tahun'];
-        $durasi_label = $years . ' Tahun';
+        $price = $duration_value * $room['harga_per_tahun'];
+        $durasi_label = $duration_value . ' Tahun';
     }
 
     if ($check_in >= $check_out) {
         $message = "<div class='alert alert-danger'>Tanggal keluar harus setelah tanggal masuk.</div>";
     } else {
-        $stmt = $conn->prepare("INSERT INTO reservasi (id_kamar, id_pengguna, nama_pemesan, email_pemesan, no_hp_pemesan, tanggal_masuk, tanggal_keluar, durasi_sewa, jumlah_tamu, total_harga, status_reservasi, metode_pembayaran, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Menunggu Pembayaran', ?, ?)");
-        $stmt->bind_param("iissssssisss", $room_id, $user_id, $full_name, $email_pemesan, $no_hp_pemesan, $check_in, $check_out, $durasi_label, $guests, $price, $payment_method, $catatan);
+        $stmt = $conn->prepare("INSERT INTO reservasi (id_kamar, id_pengguna, nama_pemesan, no_hp_pemesan, tanggal_masuk, tanggal_keluar, durasi_sewa, jumlah_tamu, total_harga, status_reservasi, metode_pembayaran, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Menunggu Pembayaran', ?, ?)");
+        $stmt->bind_param("iisssssisss", $room_id, $user_id, $full_name, $no_hp_pemesan, $check_in, $check_out, $durasi_label, $guests, $price, $payment_method, $catatan);
 
         if ($stmt->execute()) {
             $insert_id = $stmt->insert_id;
@@ -122,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             $customer_details = [
                 'first_name' => $full_name,
-                'email' => $email_pemesan,
                 'phone' => $no_hp_pemesan,
             ];
 
@@ -308,10 +287,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <input type="text" name="full_name" class="form-control" value="<?php echo htmlspecialchars($current_user['nama_lengkap'] ?: $_SESSION['username']); ?>" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Email Aktif</label>
-                            <input type="email" name="email_pemesan" class="form-control" value="<?php echo htmlspecialchars($current_user['email']); ?>" required>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label">Nomor WhatsApp</label>
                             <input type="text" name="no_hp_pemesan" class="form-control" value="<?php echo htmlspecialchars($current_user['no_hp']); ?>" required placeholder="08xxxxxxxx">
                         </div>
@@ -319,6 +294,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <hr class="my-5 opacity-25">
                     
+                    <h5 class="fw-bold mb-4 d-flex align-items-center"><i class="fas fa-clock me-3 text-indigo-600"></i>Tipe & Durasi Sewa</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Tipe Sewa</label>
+                            <div class="segment-control">
+                                <div class="segment-item">
+                                    <input type="radio" name="duration_type" id="dtMonthly" value="Monthly" checked class="segment-input" onchange="handleTypeChange()">
+                                    <label for="dtMonthly" class="segment-label">Bulanan</label>
+                                </div>
+                                 <div class="segment-item">
+                                    <input type="radio" name="duration_type" id="dtYearly" value="Yearly" class="segment-input" onchange="handleTypeChange()">
+                                    <label for="dtYearly" class="segment-label">Tahunan</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" id="durationLabel">Durasi (Bulan)</label>
+                            <select name="duration_value" id="durationValue" class="form-select" onchange="calculateTotal()">
+                                <?php for($i=1; $i<=11; $i++) echo "<option value='$i'>$i Bulan</option>"; ?>
+                            </select>
+                        </div>
+                    </div>
+
                     <h5 class="fw-bold mb-4 d-flex align-items-center"><i class="fas fa-calendar-alt me-3 text-indigo-600"></i>Detail Reservasi</h5>
                     
                     <div class="row g-3 mb-4">
@@ -327,34 +326,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <input type="date" name="check_in" id="checkIn" class="form-control" required min="<?php echo date('Y-m-d'); ?>" onchange="calculateTotal()">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Tanggal Keluar</label>
-                            <input type="date" name="check_out" id="checkOut" class="form-control" required min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" onchange="calculateTotal()">
+                            <label class="form-label">Tanggal Keluar (Otomatis)</label>
+                            <input type="date" name="check_out" id="checkOut" class="form-control" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Jumlah Tamu</label>
-                            <select name="guests" class="form-select">
-                                <option value="1">1 Orang (Default)</option>
-                                <option value="2">2 Orang</option>
-                            </select>
+                            <input type="text" class="form-control" value="1 Orang (Maksimal)" readonly style="background-color: #f1f5f9;">
+                            <input type="hidden" name="guests" value="1">
                         </div>
                     </div>
                     
-                    <label class="form-label">Tipe Sewa & Pembayaran</label>
-                    <div class="segment-control">
-                        <div class="segment-item">
-                            <input type="radio" name="duration_type" id="dtMonthly" value="Monthly" checked class="segment-input" onchange="calculateTotal()">
-                            <label for="dtMonthly" class="segment-label">Masa Sewa Bulanan</label>
-                        </div>
-                         <div class="segment-item">
-                            <input type="radio" name="duration_type" id="dtYearly" value="Yearly" class="segment-input" onchange="calculateTotal()">
-                            <label for="dtYearly" class="segment-label">Masa Sewa Tahunan</label>
-                        </div>
-                    </div>
 
-                    <div class="mb-5">
-                       <label class="form-label">Catatan Tambahan (Opsional)</label>
-                       <textarea name="catatan" class="form-control" rows="3" placeholder="Contoh: Bawa kendaraan mobil, butuh parkir lebih, dll."></textarea>
-                    </div>
                     
                     <div class="bg-indigo-50 p-4 rounded-4 mb-5 text-center border border-indigo-100" style="background: #f5f3ff;">
                         <span class="text-indigo-600 small fw-bold text-uppercase letter-spacing-1">Total Biaya Reservasi</span>
@@ -406,47 +388,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 
 
-        function calculateTotal() {
-            const checkIn  = document.getElementById('checkIn').value;
-            const checkOut = document.getElementById('checkOut').value;
-            const type     = document.querySelector('input[name="duration_type"]:checked').value;
+        function handleTypeChange() {
+            const type = document.querySelector('input[name="duration_type"]:checked').value;
+            const durationSelect = document.getElementById('durationValue');
+            const durationLabel = document.getElementById('durationLabel');
             
-            if (checkIn && checkOut) {
-                const d1 = new Date(checkIn);
-                const d2 = new Date(checkOut);
-                const diffTime = d2 - d1;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays > 0) {
-                    let total = 0;
-                    let text = '';
-                    if (type === 'Monthly') {
-                        let months = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-                        if (d2.getDate() > d1.getDate()) {
-                            months++;
-                        }
-                        if (months <= 0) months = 1;
-                        total = months * prices.Monthly;
-                        text = months + ' Bulan';
-                    } else {
-                        let years = d2.getFullYear() - d1.getFullYear();
-                        // Check if day/month of d2 is past d1 to count as additional year
-                        const d1md = (d1.getMonth() + 1) * 100 + d1.getDate();
-                        const d2md = (d2.getMonth() + 1) * 100 + d2.getDate();
-                        if (d2md > d1md) {
-                            years++;
-                        }
-                        if (years <= 0) years = 1;
-                        total = years * prices.Yearly;
-                        text = years + ' Tahun';
-                    }
-                    document.getElementById('totalPriceDisplay').innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
-                    document.getElementById('totalPriceInput').value = total;
-                    document.getElementById('durationText').innerText = 'Dihitung untuk ' + text;
-                } else {
-                    document.getElementById('totalPriceDisplay').innerText = 'Rp 0';
-                    document.getElementById('durationText').innerText = 'Tanggal Tidak Valid';
+            let options = '';
+            if (type === 'Monthly') {
+                durationLabel.innerText = 'Durasi (Bulan)';
+                for (let i = 1; i <= 11; i++) {
+                    options += `<option value="${i}">${i} Bulan</option>`;
                 }
+            } else {
+                durationLabel.innerText = 'Durasi (Tahun)';
+                for (let i = 1; i <= 5; i++) {
+                    options += `<option value="${i}">${i} Tahun</option>`;
+                }
+            }
+            durationSelect.innerHTML = options;
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const checkInInput = document.getElementById('checkIn');
+            const checkOutInput = document.getElementById('checkOut');
+            const durationType = document.querySelector('input[name="duration_type"]:checked').value;
+            const durationValue = parseInt(document.getElementById('durationValue').value);
+            
+            if (checkInInput.value) {
+                const d1 = new Date(checkInInput.value);
+                const d2 = new Date(d1);
+                
+                if (durationType === 'Monthly') {
+                    d2.setMonth(d1.getMonth() + durationValue);
+                } else {
+                    d2.setFullYear(d1.getFullYear() + durationValue);
+                }
+                
+                // Format YYYY-MM-DD for input date
+                const y = d2.getFullYear();
+                const m = String(d2.getMonth() + 1).padStart(2, '0');
+                const d = String(d2.getDate()).padStart(2, '0');
+                checkOutInput.value = `${y}-${m}-${d}`;
+                
+                const total = durationValue * prices[durationType];
+                const text = durationType === 'Monthly' ? durationValue + ' Bulan' : durationValue + ' Tahun';
+                
+                document.getElementById('totalPriceDisplay').innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
+                document.getElementById('totalPriceInput').value = total;
+                document.getElementById('durationText').innerText = 'Dihitung untuk ' + text;
+            } else {
+                checkOutInput.value = '';
+                document.getElementById('totalPriceDisplay').innerText = 'Rp 0';
+                document.getElementById('durationText').innerText = 'Pilih tanggal masuk';
             }
         }
     </script>

@@ -161,6 +161,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--primary-color);
         }
 
+        /* Fix autofill overriding background to white */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         .btn-login {
             background: var(--primary-color);
             border: none;
@@ -251,10 +261,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-4">
                     <label class="form-label">Kata Sandi</label>
                     <div class="input-group-custom">
-                        <input type="password" name="password" id="passwordInput" class="form-control" required>
+                        <input type="password" name="password" id="passwordInput" class="form-control" required style="padding-right: 2.8rem;">
                         <i class="fas fa-lock"></i>
                         <span class="password-toggle" onclick="togglePassword()">
-                            <i class="fas fa-eye" id="toggleIcon"></i>
+                            <i class="fas fa-eye" id="toggleIcon" style="position: static; transform: none;"></i>
                         </span>
                     </div>
                 </div>

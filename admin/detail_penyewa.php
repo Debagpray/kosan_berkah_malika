@@ -14,7 +14,7 @@ if (!$id) {
 }
 
 // Get tenant detail with all related info
-$sql = "SELECT dp.*, p.username, p.nama_lengkap, p.email, p.no_hp, p.foto_profil,
+$sql = "SELECT dp.*, p.username, p.nama_lengkap, p.no_hp, p.foto_profil,
                k.nama_kamar, k.lantai, k.lokasi, k.harga_per_bulan,
                r.tanggal_masuk as res_masuk, r.tanggal_keluar as res_keluar, r.total_harga, r.metode_pembayaran, r.durasi_sewa
         FROM data_penyewa dp
@@ -112,9 +112,6 @@ if (!$tenant) {
 
                     <div class="detail-label">NIK / No. KTP</div>
                     <div class="detail-value"><?php echo htmlspecialchars($tenant['no_ktp'] ?: '-'); ?></div>
-
-                    <div class="detail-label">Email</div>
-                    <div class="detail-value text-primary"><?php echo htmlspecialchars($tenant['email']); ?></div>
 
                     <div class="detail-label">No. WhatsApp</div>
                     <div class="detail-value"><?php echo htmlspecialchars($tenant['no_hp'] ?: '-'); ?></div>

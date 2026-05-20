@@ -92,17 +92,7 @@ while($r = $all_rooms->fetch_assoc()) {
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="../index.php">
-                <i class="fas fa-home me-2"></i>
-                <span>Kos Berkah Malika</span>
-            </a>
-            <a href="../index.php" class="btn btn-outline-primary rounded-pill px-4">
-                <i class="fas fa-arrow-left me-2"></i>Kembali
-            </a>
-        </div>
-    </nav>
+    <?php $is_root = false; include '../navbar.php'; ?>
 
     <div class="container py-4">
         <!-- Page Header -->

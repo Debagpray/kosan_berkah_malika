@@ -93,7 +93,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 $filter = $_GET['filter'] ?? 'aktif';
 $where  = $filter === 'all' ? '' : "WHERE dp.status_huni = '" . ($filter === 'keluar' ? 'sudah keluar' : 'aktif') . "'";
 
-$sql = "SELECT dp.*, p.username, p.nama_lengkap, p.email, p.no_hp, k.nama_kamar, k.lantai,
+$sql = "SELECT dp.*, p.username, p.nama_lengkap, p.no_hp, k.nama_kamar, k.lantai,
                r.tanggal_masuk, r.tanggal_keluar, r.metode_pembayaran, r.total_harga
         FROM data_penyewa dp
         JOIN pengguna p ON dp.id_pengguna = p.id_pengguna
@@ -240,7 +240,6 @@ $total_keluar = $conn->query("SELECT COUNT(*) as c FROM data_penyewa WHERE statu
                                         <div class="avatar-sm"><?php echo strtoupper(substr($row['nama_lengkap'], 0, 1)); ?></div>
                                         <div>
                                             <div class="fw-bold small"><?php echo htmlspecialchars($row['nama_lengkap']); ?></div>
-                                            <div class="text-muted" style="font-size:0.75rem"><?php echo htmlspecialchars($row['email']); ?></div>
                                             <?php if(!empty($row['catatan'])): ?>
                                             <div class="text-success small opacity-75 mt-1" style="font-size:0.7rem"><i class="fas fa-sticky-note me-1"></i><?php echo htmlspecialchars(mb_strimwidth($row['catatan'], 0, 30, "...")); ?></div>
                                             <?php endif; ?>

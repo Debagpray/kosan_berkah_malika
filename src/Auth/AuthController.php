@@ -24,9 +24,8 @@ class AuthController {
         }
 
         // Insert new user - nama_lengkap defaults to username if not provided
-        $stmt = $this->conn->prepare("INSERT INTO pengguna (username, nama_lengkap, email, kata_sandi, peran) VALUES (?, ?, ?, ?, ?)");
-        $email = $username . '@user.com'; // placeholder email
-        $stmt->bind_param("sssss", $username, $username, $email, $hashed_password, $role);
+        $stmt = $this->conn->prepare("INSERT INTO pengguna (username, nama_lengkap, kata_sandi, peran) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $username, $username, $hashed_password, $role);
         
         if ($stmt->execute()) {
             return ['status' => true, 'message' => 'Registrasi berhasil'];

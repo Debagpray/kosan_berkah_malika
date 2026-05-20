@@ -93,7 +93,7 @@ $total_menunggu = $conn->query("SELECT COUNT(*) as c FROM pembayaran WHERE statu
 $total_pendapatan = $conn->query("SELECT SUM(jumlah_bayar) as total FROM pembayaran WHERE status_transaksi IN ('lunas','settlement','capture')")->fetch_assoc()['total'] ?? 0;
 
 // Get payments
-$sql = "SELECT pb.*, r.id_reservasi, r.nama_pemesan, k.nama_kamar
+$sql = "SELECT pb.*, r.id_reservasi, r.nama_pemesan, r.durasi_sewa, k.nama_kamar
         FROM pembayaran pb
         JOIN reservasi r ON pb.id_reservasi = r.id_reservasi
         JOIN kamar k ON r.id_kamar = k.id_kamar
@@ -203,6 +203,7 @@ $payments = $conn->query($sql);
                             <th>Kode Pesanan</th>
                             <th>Pemesan</th>
                             <th>Kamar</th>
+                            <th>Durasi</th>
                             <th>Jumlah</th>
                             <th>Metode</th>
                             <th>Status</th>
@@ -229,6 +230,21 @@ $payments = $conn->query($sql);
                             <td><code class="text-primary"><?php echo htmlspecialchars($row['kode_pesanan']); ?></code></td>
                             <td><?php echo htmlspecialchars($row['nama_pemesan']); ?></td>
                             <td><?php echo htmlspecialchars($row['nama_kamar']); ?></td>
+                            <td>
+                                <?php 
+                                    if (!empty($row['durasi_sewa'])) {
+                                        echo htmlspecialchars($row['durasi_sewa']);
+                                    } else {
+                                        // Fallback calculation based on logic provided
+                                        $amount = (int)$row['jumlah_bayar'];
+                                        if ($amount % 7000000 == 0) {
+                                            echo ($amount / 7000000) . ' Tahun';
+                                        } else {
+                                            echo ($amount / 700000) . ' Bulan';
+                                        }
+                                    }
+                                ?>
+                            </td>
                             <td><strong>Rp <?php echo number_format($row['jumlah_bayar'], 0, ',', '.'); ?></strong></td>
                             <td><?php echo htmlspecialchars($row['jenis_pembayaran'] ?? '-'); ?></td>
                             <td><span class="<?php echo $bdg; ?>"><?php echo htmlspecialchars($sts_label); ?></span></td>

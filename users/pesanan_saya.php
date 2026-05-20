@@ -76,18 +76,7 @@ while ($prow = $pending_result->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
-        <div class="container">
-            <a class="navbar-brand text-primary fw-bold" href="../index.php"><i class="fas fa-home me-2"></i>Kos Berkah Malika</a>
-            <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
-                <a class="nav-link" href="../index.php"><i class="fas fa-home me-1"></i>Beranda</a>
-                <a class="nav-link" href="form_data_penyewa.php"><i class="fas fa-id-card me-1"></i>Data Saya</a>
-                <a class="nav-link" href="notifikasi.php"><i class="fas fa-bell me-1"></i>Notifikasi</a>
-                <a class="nav-link" href="profil.php"><i class="fas fa-user-circle me-1"></i>Profil</a>
-                <a class="btn btn-outline-danger ms-2 rounded-pill px-3" href="../logout.php"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $is_root = false; include '../navbar.php'; ?>
 
     <div class="container">
         <h2 class="mb-4">Riwayat Pesanan</h2>
@@ -215,5 +204,7 @@ while ($prow = $pending_result->fetch_assoc()) {
             ?>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -87,95 +87,7 @@ require_once 'config/database.php';
 
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm mx-3 mt-3 rounded-3"
-        style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="#"><i class="fas fa-home me-2"></i>Kos Berkah Malika</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Room Status Link - Direct to Full Page -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="users/status_kamar.php">
-                            <i class="fas fa-door-open me-1"></i> Status Kamar
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="users/pesanan_saya.php">
-                            <i class="fas fa-calendar-alt me-1 text-success "></i> Pesanan Saya
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="users/form_data_penyewa.php">
-                            <i class="fas fa-id-card me-1 text-info"></i> Data Penyewa
-                        </a>
-                    </li>
-                    <?php if (isset($_SESSION['username'])): ?>
-                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <li class="nav-item"><a class="nav-link" href="admin/index.php"><i
-                                class="fas fa-shield-alt me-1"></i>Admin Panel</a></li>
-                    <?php
-    else: ?>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle fs-5 me-2"></i>
-                            <span>
-                                <?php echo htmlspecialchars($_SESSION['username']); ?>
-                            </span>
-                            <?php
-        $notif_unread = $conn->query("SELECT COUNT(*) as c FROM notifikasi WHERE id_pengguna = {$_SESSION['user_id']} AND status_baca = 'belum dibaca'")->fetch_assoc()['c'];
-        if ($notif_unread > 0):
-?>
-                            <span class="ms-1 badge rounded-pill bg-danger" style="font-size:0.6rem">
-                                <?php echo $notif_unread; ?>
-                            </span>
-                            <?php
-        endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2"
-                            aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item py-3" href="users/profil.php"><i
-                                        class="fas fa-user-edit me-2 text-primary"></i>Profil Saya</a></li>
-                            <li>
-                                <a class="dropdown-item py-3 d-flex justify-content-between align-items-center"
-                                    href="users/notifikasi.php">
-                                    <span><i class="fas fa-bell me-2 text-warning"></i>Notifikasi</span>
-                                    <?php if ($notif_unread > 0): ?>
-                                    <span class="badge bg-danger rounded-pill">
-                                        <?php echo $notif_unread; ?>
-                                    </span>
-                                    <?php
-        endif; ?>
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item py-3 text-danger" href="logout.php"><i
-                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                        </ul>
-                    </li>
-                    <?php
-    endif; ?>
-                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <li class="nav-item"><a class="btn btn-outline-danger ms-2 rounded-pill px-4"
-                            href="logout.php">Logout</a></li>
-                    <?php
-    endif; ?>
-                    <?php
-else: ?>
-                    <li class="nav-item"><a class="nav-link" href="users/login.php">Masuk</a></li>
-                    <li class="nav-item"><a class="btn btn-primary ms-2 rounded-pill px-4"
-                            href="users/daftar.php">Daftar</a></li>
-                    <?php
-endif; ?>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php $is_root = true; include 'navbar.php'; ?>
 
     <!-- Hero Section -->
     <header class="hero-section text-center d-flex align-items-center justify-content-center text-white"
@@ -228,8 +140,8 @@ function getRoomStatusFromDB($conn, $room)
     if ($room['status_kamar'] === 'perbaikan')
         return 'Pending';
 
-    // Check for active confirmed reservation
-    $stmt = $conn->prepare("SELECT id_reservasi FROM reservasi WHERE id_kamar = ? AND status_reservasi = 'Dikonfirmasi' AND CURDATE() BETWEEN tanggal_masuk AND tanggal_keluar LIMIT 1");
+    // Check for active confirmed reservation (occupied if check-out hasn't passed yet)
+    $stmt = $conn->prepare("SELECT id_reservasi FROM reservasi WHERE id_kamar = ? AND status_reservasi = 'Dikonfirmasi' AND CURDATE() <= tanggal_keluar LIMIT 1");
     $stmt->bind_param("i", $room['id_kamar']);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0)

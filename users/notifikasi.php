@@ -110,27 +110,7 @@ $total  = $conn->query("SELECT COUNT(*) as cnt FROM notifikasi WHERE id_pengguna
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="../index.php">
-                <i class="fas fa-home me-2"></i>Kos Berkah Malika
-            </a>
-            <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
-                <a href="../index.php" class="btn btn-outline-dark btn-sm rounded-pill">
-                    <i class="fas fa-home me-1"></i>Beranda
-                </a>
-                <a href="profil.php" class="btn btn-light btn-sm rounded-pill">
-                    <i class="fas fa-user me-1"></i>Profil
-                </a>
-                <a href="pesanan_saya.php" class="btn btn-outline-primary btn-sm rounded-pill">
-                    <i class="fas fa-calendar-alt me-1"></i>Pesanan
-                </a>
-                <a href="../logout.php" class="btn btn-outline-danger btn-sm rounded-pill">
-                    <i class="fas fa-sign-out-alt me-1"></i>Keluar
-                </a>
-            </div>
-        </div>
-    </nav>
+    <?php $is_root = false; include '../navbar.php'; ?>
 
     <!-- Header -->
     <div class="page-header">

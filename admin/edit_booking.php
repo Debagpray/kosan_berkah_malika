@@ -11,7 +11,7 @@ $success_msg = '';
 $error_msg = '';
 
 // Get Booking Data
-$sql = "SELECT r.*, k.nama_kamar, k.lokasi as lokasi_kamar, u.nama_lengkap as nama_user, u.email as email_user
+$sql = "SELECT r.*, k.nama_kamar, k.lokasi as lokasi_kamar, u.nama_lengkap as nama_user
         FROM reservasi r 
         JOIN kamar k ON r.id_kamar = k.id_kamar 
         JOIN pengguna u ON r.id_pengguna = u.id_pengguna
@@ -164,10 +164,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <div class="detail-label">Nama Pemesan</div>
                             <div class="detail-value"><?php echo htmlspecialchars($booking['nama_pemesan']); ?></div>
                         </div>
-                        <div class="col-6">
-                            <div class="detail-label">Email / User</div>
-                            <div class="detail-value"><?php echo htmlspecialchars($booking['email_user']); ?></div>
-                        </div>
                         <div class="col-12"><hr class="my-3 opacity-25"></div>
                         <div class="col-6">
                             <div class="detail-label">Tanggal Masuk</div>
@@ -185,14 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <div class="detail-label">Total Harga</div>
                             <div class="detail-value text-indigo-600" style="font-size:1.2rem">Rp <?php echo number_format($booking['total_harga']); ?></div>
                         </div>
-                        <div class="col-12"><hr class="my-2 opacity-10"></div>
-                        <div class="col-12">
-                            <div class="detail-label">Catatan Tambahan</div>
-                            <div class="detail-value bg-light p-3 rounded-4 border <?php echo empty($booking['catatan']) ? 'text-muted italic fw-normal' : ''; ?>">
-                                <?php echo !empty($booking['catatan']) ? nl2br(htmlspecialchars($booking['catatan'])) : 'Tidak ada catatan khusus.'; ?>
-                            </div>
-                        </div>
                     </div>
+
                 </div>
             </div>
 
@@ -223,29 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </form>
                 </div>
 
-                <!-- Payment Proof -->
-                <div class="card-custom">
-                    <h5 class="fw-bold mb-3">Bukti Pembayaran</h5>
-                    <div class="detail-label mb-2">Metode: <?php echo $booking['metode_pembayaran']; ?></div>
-                    
-                    <?php if($booking['metode_pembayaran'] == 'Tunai'): ?>
-                        <div class="alert alert-success border-0 bg-opacity-10 bg-success text-center py-4">
-                            <i class="fas fa-hand-holding-usd fa-2x mb-2 text-success"></i>
-                            <div class="small fw-bold text-success">Pembayaran Tunai / Langsung</div>
-                            <div class="small text-muted">Tidak memerlukan unggahan bukti digital.</div>
-                        </div>
-                    <?php elseif($booking['bukti_pembayaran']): ?>
-                        <div class="text-center">
-                            <img src="../public/<?php echo $booking['bukti_pembayaran']; ?>" class="proof-img mb-3" onerror="this.src='https://via.placeholder.com/300?text=Bukti+Gagal+Dimuat'">
-                            <a href="../public/<?php echo $booking['bukti_pembayaran']; ?>" target="_blank" class="btn btn-outline-indigo btn-sm rounded-pill"><i class="fas fa-expand me-2"></i>Lihat Ukuran Penuh</a>
-                        </div>
-                    <?php else: ?>
-                        <div class="alert alert-light border text-center py-4">
-                            <i class="fas fa-image fa-2x mb-2 text-muted opacity-50"></i>
-                            <div class="small text-muted">Belum ada bukti pembayaran diunggah.</div>
-                        </div>
-                    <?php endif; ?>
-                </div>
+
             </div>
         </div>
     </div>

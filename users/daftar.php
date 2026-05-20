@@ -7,26 +7,27 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username     = trim($_POST['username']);
     $nama_lengkap = trim($_POST['nama_lengkap']);
-    $email        = trim($_POST['email']);
     $no_hp        = trim($_POST['no_hp']);
     $password     = $_POST['password'];
     $confirm_pass = $_POST['confirm_password'];
 
-    if ($password !== $confirm_pass) {
+    if (!empty($no_hp) && !ctype_digit($no_hp)) {
+        $message = "Nomor HP hanya boleh berisi angka!";
+    } elseif ($password !== $confirm_pass) {
         $message = "Password tidak cocok!";
     } elseif (strlen($password) < 6) {
         $message = "Password minimal 6 karakter.";
     } else {
-        // Check email & username uniqueness
-        $cek = $conn->prepare("SELECT id_pengguna FROM pengguna WHERE username = ? OR email = ?");
-        $cek->bind_param("ss", $username, $email);
+        // Check username uniqueness
+        $cek = $conn->prepare("SELECT id_pengguna FROM pengguna WHERE username = ?");
+        $cek->bind_param("s", $username);
         $cek->execute();
         if ($cek->get_result()->num_rows > 0) {
-            $message = "Username atau email sudah terdaftar.";
+            $message = "Username sudah terdaftar.";
         } else {
             $hashed = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-            $stmt = $conn->prepare("INSERT INTO pengguna (username, nama_lengkap, email, no_hp, kata_sandi, peran) VALUES (?, ?, ?, ?, ?, 'penyewa')");
-            $stmt->bind_param("sssss", $username, $nama_lengkap, $email, $no_hp, $hashed);
+            $stmt = $conn->prepare("INSERT INTO pengguna (username, nama_lengkap, no_hp, kata_sandi, peran) VALUES (?, ?, ?, ?, 'penyewa')");
+            $stmt->bind_param("ssss", $username, $nama_lengkap, $no_hp, $hashed);
             if ($stmt->execute()) {
                 header("Location: login.php?registered=1");
                 exit();
@@ -153,21 +154,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <!-- Email -->
-                    <div class="col-12">
-                        <label class="form-label">Email <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input type="email" name="email" class="form-control" placeholder="contoh@email.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
-                        </div>
-                    </div>
 
                     <!-- No HP -->
                     <div class="col-12">
                         <label class="form-label">Nomor HP</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                            <input type="tel" name="no_hp" class="form-control" placeholder="08xxxxxxxxxx" value="<?php echo htmlspecialchars($_POST['no_hp'] ?? ''); ?>">
+                            <input type="tel" name="no_hp" id="no_hp" class="form-control" placeholder="08xxxxxxxxxx" inputmode="numeric" pattern="[0-9]*" value="<?php echo htmlspecialchars($_POST['no_hp'] ?? ''); ?>">
                         </div>
                     </div>
 
@@ -176,18 +169,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Password -->
                     <div class="col-12">
                         <label class="form-label">Password <span class="text-danger">*</span></label>
-                        <div class="input-group">
+                        <div class="input-group position-relative">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input type="password" name="password" id="password" class="form-control" placeholder="Minimal 6 karakter" required>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Minimal 6 karakter" required style="padding-right: 2.5rem;">
+                            <i class="fas fa-eye text-muted position-absolute" id="eye1" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="togglePassword('password', 'eye1')"></i>
                         </div>
                     </div>
 
                     <!-- Konfirmasi Password -->
                     <div class="col-12">
                         <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
-                        <div class="input-group">
+                        <div class="input-group position-relative">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Ulangi password" required>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Ulangi password" required style="padding-right: 2.5rem;">
+                            <i class="fas fa-eye text-muted position-absolute" id="eye2" style="cursor: pointer; right: 15px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="togglePassword('confirm_password', 'eye2')"></i>
                         </div>
                         <div id="passMatch" class="small mt-1 d-none"></div>
                     </div>
@@ -208,6 +203,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // Blokir input non-angka pada field Nomor HP
+        document.getElementById('no_hp').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        document.getElementById('no_hp').addEventListener('keypress', function(e) {
+            if (!/[0-9]/.test(e.key)) e.preventDefault();
+        });
+        // Toggle Show/Hide Password
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         const p1 = document.getElementById('password');
         const p2 = document.getElementById('confirm_password');
         const msg = document.getElementById('passMatch');
